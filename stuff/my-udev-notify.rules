@@ -2,5 +2,5 @@
 #  - modify 2 paths below: they should match your real path to my-udev-notify.sh
 
 ACTION=="add",    RUN+="/bin/bash /path/to/my-udev-notify/my-udev-notify.sh -a add    -p '%p' -b '$attr{busnum}' -d '$attr{devnum}'"
-ACTION=="remove", RUN+="/bin/bash /path/to/my-udev-notify/my-udev-notify.sh -a remove -p '%p' -b '$attr{devnum}' -d '$attr{devnum}'"
+ACTION=="remove", RUN+="/bin/bash /path/to/my-udev-notify/my-udev-notify.sh -a remove -p '%p' -b '$attr{busnum}' -d '$attr{devnum}'"
 
