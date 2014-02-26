@@ -65,8 +65,15 @@ shift $((OPTIND - 1))
 
 show_visual_notification()
 {
+   # TODO: wait for 'iptable' user from ##linux to say how to do it better
+   #       or, at least it's better to use 'who' command instead of 'w', 
+   #       because 'who' echoes display number like (:0), and echoes nothing if no display,
+   #       which is more convenient to parse.
+
    local header=$1
    local text=$2
+
+   text=`echo "$2" | sed 's/###/\n/g'`
 
    declare -a logged_users=(`w |grep -vP "^(USER| )" |awk '{if (NF==8){print $1" "$3} else {print $1" :0"}}' |sort |uniq`)
    logged_users_cnt=${#logged_users[@]}
@@ -133,7 +140,7 @@ notify_unplugged()
             # Retrieve device title. Currently it's done just by lsusb and grep.
             # Not so good: if one day lsusb change its output format, this script
             # might stop working.
-            dev_title=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep 'Device:'`
+            dev_title=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep '^Device:\|bInterface' | awk 1 ORS='###'`
 
             # Sometimes we might have the same device attached to different bus_num or dev_num:
             # in this case, we just modify bus_num and dev_num to the current ones.
