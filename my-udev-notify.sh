@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# get path to this script
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# thanks:
+#     - to guys from linux.org.ru;
+#     - to 'iptable' user from ##linux at irc.freenode.net.
 
-# this is needed for notify-send
-export DISPLAY=":0"
+# get path to this script
+DIR="$(dirname $(readlink -f "$0"))"
 
 # set default options {{{
 
@@ -23,9 +24,9 @@ unplug_sound_path="$DIR/sounds/unplug_sound.wav"
    if [ -r /etc/my-udev-notify.conf ]; then
       . /etc/my-udev-notify.conf
    fi
-   if [ -r ~/.my-udev-notify.conf ]; then
-      . ~/.my-udev-notify.conf
-   fi
+   #if [ -r ~/.my-udev-notify.conf ]; then
+      #. ~/.my-udev-notify.conf
+   #fi
 }
 # }}}
 
@@ -62,13 +63,31 @@ done
 shift $((OPTIND - 1))
 # }}}
 
+show_visual_notification()
+{
+   local header=$1
+   local text=$2
+
+   declare -a logged_users=(`w |grep -vP "^(USER| )" |awk '{if (NF==8){print $1" "$3} else {print $1" :0"}}' |sort |uniq`)
+   logged_users_cnt=${#logged_users[@]}
+
+   for (( i=0; i<${logged_users_cnt}; i=($i + 2) )); do
+      cur_user=${logged_users[$i + 0]}
+      cur_display=${logged_users[$i + 1]}
+
+      export DISPLAY=$cur_display
+      su $cur_user -c "notify-send '$header' '$text'"
+   done
+}
+
 # notification for plugged device {{{
 notify_plugged()
 {
    local dev_title=$1
 
    if [[ $show_notifications == true ]]; then
-      notify-send "device plugged" "$dev_title" &
+      #notify-send "device plugged" "$dev_title" &
+      show_visual_notification "device plugged" "$dev_title"
    fi
    if [[ $play_sounds == true && -r $plug_sound_path ]]; then
       /usr/bin/play -q $plug_sound_path &
@@ -82,7 +101,8 @@ notify_unplugged()
    local dev_title=$1
 
    if [[ $show_notifications == true ]]; then
-      notify-send "device unplugged" "$dev_title" &
+      #notify-send "device unplugged" "$dev_title" &
+      show_visual_notification "device unplugged" "$dev_title"
    fi
    if [[ $play_sounds == true && -r $unplug_sound_path ]]; then
       /usr/bin/play -q $unplug_sound_path &
