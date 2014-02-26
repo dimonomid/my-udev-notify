@@ -4,6 +4,9 @@
 #     - to guys from linux.org.ru;
 #     - to 'iptable' user from ##linux at irc.freenode.net.
 
+# test command: 
+#     sudo /bin/bash my-udev-notify -a add -p 'test_path' -b '555' -d '777'
+
 # get path to this script
 DIR="$(dirname $(readlink -f "$0"))"
 
@@ -73,7 +76,7 @@ show_visual_notification()
    local header=$1
    local text=$2
 
-   text=`echo "$2" | sed 's/###/\n/g'`
+   text=`echo "$text" | sed 's/###/\n/g'`
 
    declare -a logged_users=(`w |grep -vP "^(USER| )" |awk '{if (NF==8){print $1" "$3} else {print $1" :0"}}' |sort |uniq`)
    logged_users_cnt=${#logged_users[@]}
@@ -121,7 +124,6 @@ notify_unplugged()
    # we need for lock our $devlist_file
    exec 200>/var/lock/.udev-notify-devices.exclusivelock
    flock -x -w 10 200 || exit 1
-
    case $action in
 
       "reboot" )
@@ -140,7 +142,7 @@ notify_unplugged()
             # Retrieve device title. Currently it's done just by lsusb and grep.
             # Not so good: if one day lsusb change its output format, this script
             # might stop working.
-            dev_title=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep '^Device:\|bInterface' | awk 1 ORS='###'`
+            dev_title=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep '^Device:\|bInterfaceClass\|bInterfaceSubClass\|bInterfaceProtocol'|sed 's/^\s*\([a-zA-Z]\+\):*\s*[0-9]*\s*/<b>\1:<\/b> /' | awk 1 ORS='###'`
 
             # Sometimes we might have the same device attached to different bus_num or dev_num:
             # in this case, we just modify bus_num and dev_num to the current ones.
