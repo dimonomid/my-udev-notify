@@ -78,7 +78,7 @@ show_visual_notification()
 
    text=`echo "$text" | sed 's/###/\n/g'`
 
-   declare -a logged_users=(` who | grep "(.*)" | sed 's/^\s*\(\S\+\).*(\(.*\))$/\1 \2/g' | uniq | sort`)
+   declare -a logged_users=(` who | grep "(.*)" | sed 's/^\s*\(\S\+\).*(\(.*\))/\1 \2/g' | uniq | sort`)
    logged_users_cnt=${#logged_users[@]}
 
    for (( i=0; i<${logged_users_cnt}; i=($i + 2) )); do
