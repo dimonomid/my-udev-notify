@@ -2,7 +2,7 @@ My Udev Notify
 ==============
 Show notifications when **any** USB device is plugged/unplugged.
 
-[!notification](http://i.stack.imgur.com/UQogN.png)
+![notification](http://i.stack.imgur.com/UQogN.png)
 
 It is tested on Linux Mint 13, Ubuntu 12.04, Ubuntu 13.04.
 I believe it will work on any systems with udev.
