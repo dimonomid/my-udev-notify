@@ -17,6 +17,7 @@ devlist_file="/var/tmp/udev-notify-devices"
 
 show_notifications=true
 play_sounds=true
+use_espeak=false
 
 plug_sound_path="$DIR/sounds/plug_sound.wav"
 unplug_sound_path="$DIR/sounds/unplug_sound.wav"
@@ -94,17 +95,36 @@ show_visual_notification()
    done
 }
 
+sound_or_speak()
+{
+   local soundfile=$1
+   local speaktext=$2
+   
+   
+   if [[ $use_espeak == true ]]; then
+      if [[ "$speaktext" != "" ]]; then
+         /usr/bin/espeak "$speaktext" &
+      fi
+   else
+      if [[ -r "$soundfile" ]]; then
+         /usr/bin/play -q "$soundfile" &
+      fi
+   fi
+}
+
 # notification for plugged device {{{
 notify_plugged()
 {
    local dev_title=$1
+   local dev_name=$2
 
    if [[ $show_notifications == true ]]; then
       #notify-send "device plugged" "$dev_title" &
       show_visual_notification "device plugged" "$dev_title"
    fi
-   if [[ $play_sounds == true && -r $plug_sound_path ]]; then
-      /usr/bin/play -q $plug_sound_path &
+   
+   if [[ $play_sounds == true ]]; then
+      sound_or_speak "$plug_sound_path" "Device plugged: $dev_name"
    fi
 }
 # }}}
@@ -113,13 +133,15 @@ notify_plugged()
 notify_unplugged()
 {
    local dev_title=$1
+   local dev_name=$2
 
    if [[ $show_notifications == true ]]; then
       #notify-send "device unplugged" "$dev_title" &
       show_visual_notification "device unplugged" "$dev_title"
    fi
-   if [[ $play_sounds == true && -r $unplug_sound_path ]]; then
-      /usr/bin/play -q $unplug_sound_path &
+   
+   if [[ $play_sounds == true ]]; then
+      sound_or_speak "$unplug_sound_path" "Device unplugged: $dev_name"
    fi
 }
 # }}}
@@ -147,6 +169,7 @@ notify_unplugged()
             # Not so good: if one day lsusb change its output format, this script
             # might stop working.
             dev_title=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep '^Device:\|bInterfaceClass\|bInterfaceSubClass\|bInterfaceProtocol'|sed 's/^\s*\([a-zA-Z]\+\):*\s*[0-9]*\s*/<b>\1:<\/b> /' | awk 1 ORS='###'`
+            dev_name=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep idProduct | tr -s ' ' | cut -s -d' ' -f4,5,6,7,8,9`
 
             # Sometimes we might have the same device attached to different bus_num or dev_num:
             # in this case, we just modify bus_num and dev_num to the current ones.
@@ -164,9 +187,10 @@ notify_unplugged()
             if [[ $existing_dev_on_bus_cnt == 0 ]]; then
                # this device isn't stored yet in the devlist, so let's write it there.
                echo "$bus_num:$dev_num:$dev_path title=\"$dev_title\"" >> $devlist_file
+               echo "$bus_num:$dev_num:$dev_path name=\"$dev_name\"" >> $devlist_file
 
                # and, finally, notify the user.
-               notify_plugged "$dev_title"
+               notify_plugged "$dev_title" "$dev_name"
             fi
          fi
          ;;
@@ -178,7 +202,8 @@ notify_unplugged()
          # and there's even no vendor_id and product_id.
          # But it emits dev_path. So we have to maintain our own plugged devices list.
          # Now we retrieve stored device title from our devlist by its dev_path.
-         dev_title=`cat $devlist_file | grep "$dev_path " | sed 's/.*title=\"\(.*\)\".*/\1/g'`
+         dev_title=`cat $devlist_file | grep "$dev_path " | grep 'title="' | sed 's/.*title=\"\(.*\)\".*/\1/g'`
+         dev_name=`cat $devlist_file | grep "$dev_path " | grep 'name="' | sed 's/.*name=\"\(.*\)\".*/\1/g'`
 
          # remove that device from list (since it was just unplugged)
          cat $devlist_file | grep -v "$dev_path " > ${devlist_file}_tmp
@@ -186,7 +211,7 @@ notify_unplugged()
 
          # if we have found title, then notify user, after all.
          if [[ "$dev_title" != "" ]]; then
-            notify_unplugged "$dev_title"
+            notify_unplugged "$dev_title" "$dev_name"
          fi
          ;;
 
