@@ -16,6 +16,8 @@ DIR="$(dirname $(readlink -f "$0"))"
 devlist_file="/var/tmp/udev-notify-devices"
 
 show_notifications=true
+notification_icons=true
+
 play_sounds=true
 use_espeak=false
 
@@ -150,7 +152,12 @@ show_visual_notification()
    local header=$1
    local text=$2
 
-   get_device_icon "$text"
+   if [[ notification_icons == true ]]; then
+      get_device_icon "$text"
+   else
+      dev_icon=''
+   fi
+   
    text=`echo "$text" | sed 's/###/\n/g'`
 
    declare -a logged_users=(` who | grep "(.*)" | sed 's/^\s*\(\S\+\).*(\(.*\))/\1 \2/g' | uniq | sort`)
