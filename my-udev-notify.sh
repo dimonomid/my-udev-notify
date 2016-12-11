@@ -16,6 +16,8 @@ DIR="$(dirname $(readlink -f "$0"))"
 devlist_file="/var/tmp/udev-notify-devices"
 
 show_notifications=true
+notification_icons=true
+
 play_sounds=true
 use_espeak=false
 
@@ -67,6 +69,79 @@ done
 shift $((OPTIND - 1))
 # }}}
 
+get_device_icon()
+{
+   local dev_data=`echo "$1" | sed 's/###/\n/g' | grep -e 'bInterfaceClass' -A 2 -m 1 | cut -d ' ' -f 2,3,4,5,6,7,8,9 | tr -s ' ' '_'`
+   
+   OLD_IFS=$IFS
+   IFS="
+"
+   local dev_array=($dev_data)
+   IFS=$OLD_IFS
+   
+   local    class=${dev_array[0]}
+   local subclass=${dev_array[1]}
+   local protocol=${dev_array[2]}
+   
+   case "$class:$subclass:$protocol" in
+      Audio:* )
+         dev_icon="audio-card"
+      ;;
+      
+      Communications:Abstract* )
+         dev_icon="modem"
+      ;;
+      
+      Communications:Ethernet* )
+         dev_icon="network-wired"
+      ;;
+   
+      Human_Interface_Device:*:Keyboard )
+         dev_icon="input-keyboard"
+      ;;
+      
+      Human_Interface_Device:*:Mouse )
+         dev_icon="input-mouse"
+      ;;
+      
+      Mass_Storage:RBC:* )
+         dev_icon="media-removable"
+      ;;
+      
+      Mass_Storage:Floppy:* )
+         dev_icon="media-floppy"
+      ;;
+      
+      Mass_Storage:SCSI:* )
+         dev_icon="media-removable"
+      ;;
+      
+      Printer:* )
+         dev_icon="printer"
+      ;;
+      
+      Hub:* )
+         dev_icon="emblem-shared"
+      ;;
+      
+      Video:* )
+         dev_icon="camera-web"
+      ;;
+      
+      Xbox:Controller:* )
+         dev_icon="input-gaming"
+      ;;
+      
+      Wireless:Radio_Frequency:Bluetooth )
+         dev_icon="bluetooth"
+      ;;
+      
+      *)
+         dev_icon="dialog-information"
+      ;;
+   esac
+}
+
 show_visual_notification()
 {
    # TODO: wait for 'iptable' user from ##linux to say how to do it better
@@ -77,6 +152,12 @@ show_visual_notification()
    local header=$1
    local text=$2
 
+   if [[ notification_icons == true ]]; then
+      get_device_icon "$text"
+   else
+      dev_icon=''
+   fi
+   
    text=`echo "$text" | sed 's/###/\n/g'`
 
    declare -a logged_users=(` who | grep "(.*)" | sed 's/^\s*\(\S\+\).*(\(.*\))/\1 \2/g' | uniq | sort`)
@@ -91,7 +172,7 @@ show_visual_notification()
       cur_display=${logged_users[$i + 1]}
 
       export DISPLAY=$cur_display
-      su $cur_user -c "notify-send '$header' '$text'"
+      su $cur_user -c "notify-send -i '$dev_icon' '$header' '$text'"
    done
 }
 
