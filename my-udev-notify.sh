@@ -242,15 +242,11 @@ notify_unplugged()
 
          if [[ "$bus_num" != "" && "$dev_num" != "" ]]; then
 
-            # make bus_num and dev_num have leading zeros
-            bus_num=`printf %03d $bus_num`
-            dev_num=`printf %03d $dev_num`
-
             # Retrieve device title. Currently it's done just by lsusb and grep.
             # Not so good: if one day lsusb change its output format, this script
             # might stop working.
-            dev_title=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep '^Device:\|bInterfaceClass\|bInterfaceSubClass\|bInterfaceProtocol'|sed 's/^\s*\([a-zA-Z]\+\):*\s*[0-9]*\s*/<b>\1:<\/b> /' | awk 1 ORS='###'`
-            dev_name=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep idProduct | tr -s ' ' | cut -s -d' ' -f4,5,6,7,8,9`
+            dev_title="$(lsusb -v -s $bus_num:$dev_num | awk '/ Device /{if($1=="Bus")print ":<b>" substr($0, index($0,$5)) "</b>"}; /bInterfaceClass|bInterfaceProtocol/{print "<b>" $1 ":</b> " substr($0, index($0,$3)) }' ORS='###')"
+            dev_name="$(lsusb -v -s $bus_num:$dev_num |  grep -Po "(?<=idProduct\ {10}0x\S{4} ).*")"
 
             # Sometimes we might have the same device attached to different bus_num or dev_num:
             # in this case, we just modify bus_num and dev_num to the current ones.
