@@ -14,6 +14,7 @@ DIR="$(dirname $(readlink -f "$0"))"
 
 # file for storing list of currently plugged devices
 devlist_file="/var/tmp/udev-notify-devices"
+devlist_lock="/var/lock/.udev-notify-devices.exclusivelock"
 
 show_notifications=true
 notification_icons=true
@@ -229,7 +230,7 @@ notify_unplugged()
 
 {
    # we need for lock our $devlist_file
-   exec 200>/var/lock/.udev-notify-devices.exclusivelock
+   exec 200>$devlist_lock
    flock -x -w 10 200 || exit 1
    case $action in
 
