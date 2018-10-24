@@ -231,7 +231,8 @@ notify_unplugged()
 {
    # we need for lock our $devlist_file
    exec 200>$devlist_lock
-   flock -x -w 10 200 || exit 1
+   #flock --verbose -x -w 10 200 || exit 1
+   flock -x -w 10 200 || rm $devlist_lock
    case $action in
 
       "reboot" )
@@ -301,6 +302,7 @@ notify_unplugged()
 
    #unlock $devlist_file
    flock -u 200
+   rm $devlist_lock
 }
 
 
