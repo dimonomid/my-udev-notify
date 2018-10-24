@@ -251,8 +251,9 @@ notify_unplugged()
             # Retrieve device title. Currently it's done just by lsusb and grep.
             # Not so good: if one day lsusb change its output format, this script
             # might stop working.
-            dev_title=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep '^Device:\|bInterfaceClass\|bInterfaceSubClass\|bInterfaceProtocol'|sed 's/^\s*\([a-zA-Z]\+\):*\s*[0-9]*\s*/<b>\1:<\/b> /' | awk 1 ORS='###'`
+            dev_title=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep '^Device:\|iProduct\|bInterfaceClass\|bInterfaceSubClass\|bInterfaceProtocol'|sed 's/^\s*\([a-zA-Z]\+\):*\s*[0-9]*\s*/<b>\1:<\/b> /' | awk 1 ORS='###'`
             dev_name=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep idProduct | tr -s ' ' | cut -s -d' ' -f4,5,6,7,8,9`
+            [ -z $dev_name ] && dev_name=`lsusb -D /dev/bus/usb/$bus_num/$dev_num | grep iProduct | tr -s ' ' | cut -s -d' ' -f4,5,6,7,8,9`
 
             # Sometimes we might have the same device attached to different bus_num or dev_num:
             # in this case, we just modify bus_num and dev_num to the current ones.
