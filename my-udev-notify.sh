@@ -160,18 +160,11 @@ show_visual_notification()
    
    text=`echo "$text" | sed 's/###/\n/g'`
 
-   declare -a logged_users=(` who | grep "(.*)" | sed 's/^\s*\(\S\+\).*(\(.*\))/\1 \2/g' | uniq | sort`)
+   declare -a logged_users=(`who | grep "(.*)" | sed 's/^\s*\(\S\+\).*/\1/g' | uniq | sort`)
 
-   if [[ ${#logged_users[@]} == 0 ]]; then
-      # it seems 'who' doesn't echo displays, so let's assume :0 (better than nothing)
-      declare -a logged_users=(`who | awk '{print $1" :0"}' | uniq | sort`)
-   fi
+   for (( i=0; i<${#logged_users[@]}; i=($i + 1) )); do
+      cur_user=${logged_users[$i]}
 
-   for (( i=0; i<${#logged_users[@]}; i=($i + 2) )); do
-      cur_user=${logged_users[$i + 0]}
-      cur_display=${logged_users[$i + 1]}
-
-      export DISPLAY=$cur_display
       su $cur_user -c "notify-send -i '$dev_icon' '$header' '$text'"
    done
 }
@@ -227,10 +220,9 @@ notify_unplugged()
 }
 # }}}
 
-{
+(
    # we need for lock our $devlist_file
-   exec 200>/var/lock/.udev-notify-devices.exclusivelock
-   flock -x -w 10 200 || exit 1
+   flock -w 10 200 || exit 1
    case $action in
 
       "reboot" )
@@ -298,9 +290,7 @@ notify_unplugged()
 
    esac
 
-   #unlock $devlist_file
-   flock -u 200
-}
+) 200>/var/lock/.udev-notify-devices.exclusivelock
 
 
 
