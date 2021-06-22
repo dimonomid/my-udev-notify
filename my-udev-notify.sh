@@ -160,7 +160,7 @@ show_visual_notification()
    
    text=`echo "$text" | sed 's/###/\n/g'`
 
-   declare -a logged_users=(`who | grep "(.*)" | sed 's/^\s*\(\S\+\).*/\1/g' | uniq | sort`)
+   declare -a logged_users=($(print_logged_users))
 
    for (( i=0; i<${#logged_users[@]}; i=($i + 1) )); do
       cur_user=${logged_users[$i]}
@@ -169,21 +169,31 @@ show_visual_notification()
    done
 }
 
+print_logged_users()
+{
+   who | grep "(.*)" | sed 's/^\s*\(\S\+\).*/\1/g' | uniq | sort
+}
+
 sound_or_speak()
 {
    local soundfile=$1
    local speaktext=$2
-   
-   
-   if [[ $use_espeak == true ]]; then
-      if [[ "$speaktext" != "" ]]; then
-         /usr/bin/espeak "$speaktext" &
+
+   declare -a logged_users=($(print_logged_users))
+
+   for (( i=0; i<${#logged_users[@]}; i=($i + 1) )); do
+      cur_user=${logged_users[$i]}
+
+      if [[ $use_espeak == true ]]; then
+         if [[ "$speaktext" != "" ]]; then
+            su $cur_user -c "/usr/bin/espeak '$speaktext'"
+         fi
+      else
+         if [[ -r "$soundfile" ]]; then
+            su $cur_user -c "/usr/bin/play -q '$soundfile'"
+         fi
       fi
-   else
-      if [[ -r "$soundfile" ]]; then
-         /usr/bin/play -q "$soundfile" &
-      fi
-   fi
+   done
 }
 
 # notification for plugged device {{{
