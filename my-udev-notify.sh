@@ -152,7 +152,7 @@ show_visual_notification()
    local header=$1
    local text=$2
 
-   if [[ notification_icons == true ]]; then
+   if [[ $notification_icons == true ]]; then
       get_device_icon "$text"
    else
       dev_icon=''
